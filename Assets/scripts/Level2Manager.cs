@@ -1,7 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
-using TMPro;
 using UnityEngine;
+using TMPro;
 
 public class Level2Manager : MonoBehaviour
 {
@@ -11,9 +11,9 @@ public class Level2Manager : MonoBehaviour
     public LetterEntry[] letters;
 
     [Header("Question Settings")]
-    public int soundRepeatCount = 3;
-    public float repeatInterval = 1.2f;
-    public float initialDelay = 0.5f;
+    public int   soundRepeatCount = 3;
+    public float repeatInterval   = 1.2f;
+    public float initialDelay     = 0.5f;
 
     [Header("Wrong Collectibles Per Question")]
     public int wrongLetterCount = 2;
@@ -24,31 +24,27 @@ public class Level2Manager : MonoBehaviour
 
     [Header("UI (optional)")]
     public TextMeshProUGUI feedbackText;
-    public float feedbackDuration = 1f;
+    public float           feedbackDuration = 1f;
 
     // ── Runtime state ──────────────────────────────────────────────
-    public LetterEntry CurrentQuestion { get; private set; }
-    public bool WaitingForCollect { get; private set; } = false;
-    public bool IsActive { get; private set; } = false;
+    public LetterEntry CurrentQuestion   { get; private set; }
+    public bool        WaitingForCollect { get; private set; } = false;
+    public bool        IsActive          { get; private set; } = false;
 
     private AudioSource audioSource;
-    private List<int> usedIndices = new List<int>();
-    private bool questionAnswered = false;
-    private Coroutine soundCoroutine = null;
+    private List<int>   usedIndices      = new List<int>();
+    private bool        questionAnswered  = false;
+    private Coroutine   soundCoroutine    = null;
 
     // Track which index is the current question so we compare by index not reference
     private int currentQuestionIndex = -1;
 
     void Awake()
     {
-        if (Instance != null && Instance != this)
-        {
-            Destroy(gameObject);
-            return;
-        }
-        Instance = this;
+        if (Instance != null && Instance != this) { Destroy(gameObject); return; }
+        Instance    = this;
         audioSource = gameObject.AddComponent<AudioSource>();
-        audioSource.playOnAwake = false;
+        audioSource.playOnAwake  = false;
         audioSource.spatialBlend = 0f;
     }
 
@@ -56,8 +52,8 @@ public class Level2Manager : MonoBehaviour
 
     public void StartLevel2()
     {
-        IsActive = true;
-        questionAnswered = false;
+        IsActive             = true;
+        questionAnswered     = false;
         currentQuestionIndex = -1;
         usedIndices.Clear();
         LoadNextQuestion();
@@ -65,21 +61,15 @@ public class Level2Manager : MonoBehaviour
 
     public void OnCollected(GameObject collectedPrefabRef, bool isCorrect)
     {
-        if (!IsActive || CurrentQuestion == null)
-            return;
-        if (questionAnswered)
-            return;
+        if (!IsActive || CurrentQuestion == null) return;
+        if (questionAnswered) return;
 
         if (isCorrect)
         {
-            questionAnswered = true;
+            questionAnswered  = true;
             WaitingForCollect = false;
 
-            if (soundCoroutine != null)
-            {
-                StopCoroutine(soundCoroutine);
-                soundCoroutine = null;
-            }
+            if (soundCoroutine != null) { StopCoroutine(soundCoroutine); soundCoroutine = null; }
 
             GameManager.Instance?.AddScore(correctScoreValue);
             ProgressSlider.instance?.addProgress(5);
@@ -95,8 +85,9 @@ public class Level2Manager : MonoBehaviour
 
             Level2CollectibleSpawner.Instance?.ResetSpawn();
 
+            // Load a NEW random question (not the same one) after wrong answer
             if (soundCoroutine == null)
-                Invoke(nameof(ReplayQuestionSound), feedbackDuration + 0.3f);
+                Invoke(nameof(LoadNewRandomQuestion), feedbackDuration + 0.3f);
         }
     }
 
@@ -109,16 +100,14 @@ public class Level2Manager : MonoBehaviour
     public List<LetterEntry> GetWrongLetters(int count)
     {
         var wrong = new List<LetterEntry>();
-        var pool = new List<LetterEntry>();
+        var pool  = new List<LetterEntry>();
 
         for (int i = 0; i < letters.Length; i++)
         {
             // Skip the current question by index — not by prefab reference
-            if (i == currentQuestionIndex)
-                continue;
+            if (i == currentQuestionIndex) continue;
             // Skip null entries
-            if (letters[i].prefab == null)
-                continue;
+            if (letters[i].prefab == null) continue;
             pool.Add(letters[i]);
         }
 
@@ -135,22 +124,49 @@ public class Level2Manager : MonoBehaviour
 
         // Warn if we couldn't fill the requested count
         if (wrong.Count < count)
-            Debug.LogWarning(
-                $"[Level2Manager] Only {wrong.Count} wrong letters available, "
-                    + $"needed {count}. Add more entries to the Letters array."
-            );
+            Debug.LogWarning($"[Level2Manager] Only {wrong.Count} wrong letters available, " +
+                             $"needed {count}. Add more entries to the Letters array.");
 
         return wrong;
+    }
+
+    /// <summary>Picks a different random question after a wrong answer.</summary>
+    void LoadNewRandomQuestion()
+    {
+        if (letters == null || letters.Length == 0) return;
+
+        questionAnswered  = false;
+        WaitingForCollect = false;
+
+        // Pick any index different from the current one
+        int idx;
+        int safety = 0;
+        do
+        {
+            idx = Random.Range(0, letters.Length);
+            safety++;
+        }
+        while (idx == currentQuestionIndex && letters.Length > 1 && safety < 100);
+
+        currentQuestionIndex = idx;
+        CurrentQuestion      = letters[idx];
+
+        if (CurrentQuestion.prefab == null)
+        {
+            Debug.LogError($"[Level2Manager] Letter entry [{idx}] has no prefab assigned!");
+            return;
+        }
+
+        Debug.Log($"[Level2Manager] New random question after wrong: entry[{idx}] prefab={CurrentQuestion.prefab.name}");
+
+        if (soundCoroutine != null) { StopCoroutine(soundCoroutine); soundCoroutine = null; }
+        soundCoroutine = StartCoroutine(PlayQuestionSoundRepeat(initialDelay));
     }
 
     public void StopLevel2()
     {
         IsActive = false;
-        if (soundCoroutine != null)
-        {
-            StopCoroutine(soundCoroutine);
-            soundCoroutine = null;
-        }
+        if (soundCoroutine != null) { StopCoroutine(soundCoroutine); soundCoroutine = null; }
         CancelInvoke();
     }
 
@@ -164,7 +180,7 @@ public class Level2Manager : MonoBehaviour
             return;
         }
 
-        questionAnswered = false;
+        questionAnswered  = false;
         WaitingForCollect = false;
 
         if (usedIndices.Count >= letters.Length)
@@ -177,11 +193,12 @@ public class Level2Manager : MonoBehaviour
         {
             idx = Random.Range(0, letters.Length);
             safety++;
-        } while (usedIndices.Contains(idx) && safety < 100);
+        }
+        while (usedIndices.Contains(idx) && safety < 100);
 
         usedIndices.Add(idx);
         currentQuestionIndex = idx;
-        CurrentQuestion = letters[idx];
+        CurrentQuestion      = letters[idx];
 
         // Guard — make sure the picked entry is valid
         if (CurrentQuestion.prefab == null)
@@ -196,11 +213,7 @@ public class Level2Manager : MonoBehaviour
 
         Debug.Log($"[Level2Manager] Question: entry[{idx}] prefab={CurrentQuestion.prefab.name}");
 
-        if (soundCoroutine != null)
-        {
-            StopCoroutine(soundCoroutine);
-            soundCoroutine = null;
-        }
+        if (soundCoroutine != null) { StopCoroutine(soundCoroutine); soundCoroutine = null; }
         soundCoroutine = StartCoroutine(PlayQuestionSoundRepeat(initialDelay));
     }
 
@@ -217,15 +230,14 @@ public class Level2Manager : MonoBehaviour
             yield return new WaitForSeconds(clipLen + repeatInterval);
         }
 
-        soundCoroutine = null;
+        soundCoroutine    = null;
         WaitingForCollect = true;
-        Level2CollectibleSpawner.Instance?.TriggerSpawn();
+Level2CollectibleSpawner.Instance?.TriggerSpawn();
     }
 
     void ReplayQuestionSound()
     {
-        if (soundCoroutine != null)
-            return;
+        if (soundCoroutine != null) return;
         soundCoroutine = StartCoroutine(ReplaySoundOnly());
     }
 
@@ -244,16 +256,15 @@ public class Level2Manager : MonoBehaviour
             yield return new WaitForSeconds(clipLen + repeatInterval);
         }
 
-        soundCoroutine = null;
+        soundCoroutine    = null;
         WaitingForCollect = true;
-        Level2CollectibleSpawner.Instance?.TriggerSpawn();
+Level2CollectibleSpawner.Instance?.TriggerSpawn();
     }
 
     void ShowFeedback(string message, bool correct)
     {
-        if (feedbackText == null)
-            return;
-        feedbackText.text = message;
+        if (feedbackText == null) return;
+        feedbackText.text  = message;
         feedbackText.color = correct ? Color.green : Color.red;
         feedbackText.gameObject.SetActive(true);
         Invoke(nameof(HideFeedback), feedbackDuration);
@@ -261,8 +272,7 @@ public class Level2Manager : MonoBehaviour
 
     void HideFeedback()
     {
-        if (feedbackText != null)
-            feedbackText.gameObject.SetActive(false);
+        if (feedbackText != null) feedbackText.gameObject.SetActive(false);
     }
 }
 
@@ -271,7 +281,6 @@ public class LetterEntry
 {
     [Tooltip("Your existing collectible prefab for this letter")]
     public GameObject prefab;
-
     [Tooltip("The spoken sound for this letter")]
-    public AudioClip sound;
+    public AudioClip  sound;
 }

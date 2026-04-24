@@ -167,6 +167,12 @@ public class GameManager : MonoBehaviour
         foreach (var item in FindObjectsByType<Level3CollectibleItem>(FindObjectsSortMode.None))
             Destroy(item.gameObject);
 
+        // Fully reset Level 2 / 3 spawner state so they start fresh
+        Level2CollectibleSpawner.Instance?.ResetSpawn();
+        Level3CollectibleSpawner.Instance?.ResetSpawn();
+        Level2Manager.Instance?.StopLevel2();
+        Level3Manager.Instance?.StopLevel3();
+
         if (uiManager != null)
         {
             uiManager.gameCompletePanel.SetActive(false);

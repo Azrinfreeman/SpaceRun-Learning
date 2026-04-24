@@ -1,7 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
-using TMPro;
 using UnityEngine;
+using TMPro;
 
 /// <summary>
 /// Level 3 — same logic as Level 2 but:
@@ -18,13 +18,13 @@ public class Level3Manager : MonoBehaviour
     public WordEntry[] words;
 
     [Header("Question Settings")]
-    public int soundRepeatCount = 3;
-    public float repeatInterval = 1.2f;
-    public float initialDelay = 0.5f;
+    public int   soundRepeatCount = 3;
+    public float repeatInterval   = 1.2f;
+    public float initialDelay     = 0.5f;
 
     [Header("Cluster Size (fixed at 3 for Level 3)")]
     [HideInInspector]
-    public int wrongWordCount = 2; // always 2 wrong + 1 correct = 3 total
+    public int wrongWordCount = 2;   // always 2 wrong + 1 correct = 3 total
 
     [Header("Score")]
     public float correctScoreValue = 20f;
@@ -32,29 +32,25 @@ public class Level3Manager : MonoBehaviour
 
     [Header("UI (optional)")]
     public TextMeshProUGUI feedbackText;
-    public float feedbackDuration = 1f;
+    public float           feedbackDuration = 1f;
 
     // ── Runtime state ──────────────────────────────────────────────
-    public WordEntry CurrentQuestion { get; private set; }
-    public bool WaitingForCollect { get; private set; } = false;
-    public bool IsActive { get; private set; } = false;
+    public WordEntry CurrentQuestion   { get; private set; }
+    public bool      WaitingForCollect { get; private set; } = false;
+    public bool      IsActive          { get; private set; } = false;
 
     private AudioSource audioSource;
-    private List<int> usedIndices = new List<int>();
-    private bool questionAnswered = false;
-    private Coroutine soundCoroutine = null;
+    private List<int>   usedIndices     = new List<int>();
+    private bool        questionAnswered = false;
+    private Coroutine   soundCoroutine   = null;
 
     // ── Unity lifecycle ────────────────────────────────────────────
     void Awake()
     {
-        if (Instance != null && Instance != this)
-        {
-            Destroy(gameObject);
-            return;
-        }
-        Instance = this;
+        if (Instance != null && Instance != this) { Destroy(gameObject); return; }
+        Instance    = this;
         audioSource = gameObject.AddComponent<AudioSource>();
-        audioSource.playOnAwake = false;
+        audioSource.playOnAwake  = false;
         audioSource.spatialBlend = 0f;
     }
 
@@ -62,7 +58,7 @@ public class Level3Manager : MonoBehaviour
 
     public void StartLevel3()
     {
-        IsActive = true;
+        IsActive         = true;
         questionAnswered = false;
         usedIndices.Clear();
         LoadNextQuestion();
@@ -70,21 +66,15 @@ public class Level3Manager : MonoBehaviour
 
     public void OnCollected(GameObject collectedPrefabRef, bool isCorrect)
     {
-        if (!IsActive || CurrentQuestion == null)
-            return;
-        if (questionAnswered)
-            return;
+        if (!IsActive || CurrentQuestion == null) return;
+        if (questionAnswered) return;
 
         if (isCorrect)
         {
-            questionAnswered = true;
+            questionAnswered  = true;
             WaitingForCollect = false;
 
-            if (soundCoroutine != null)
-            {
-                StopCoroutine(soundCoroutine);
-                soundCoroutine = null;
-            }
+            if (soundCoroutine != null) { StopCoroutine(soundCoroutine); soundCoroutine = null; }
 
             GameManager.Instance?.AddScore(correctScoreValue);
             ProgressSlider.instance?.addProgress(5);
@@ -110,7 +100,7 @@ public class Level3Manager : MonoBehaviour
     public List<WordEntry> GetWrongWords(int count)
     {
         var wrong = new List<WordEntry>();
-        var pool = new List<WordEntry>();
+        var pool  = new List<WordEntry>();
 
         foreach (var w in words)
             if (w.prefab != CurrentQuestion.prefab)
@@ -131,11 +121,7 @@ public class Level3Manager : MonoBehaviour
     public void StopLevel3()
     {
         IsActive = false;
-        if (soundCoroutine != null)
-        {
-            StopCoroutine(soundCoroutine);
-            soundCoroutine = null;
-        }
+        if (soundCoroutine != null) { StopCoroutine(soundCoroutine); soundCoroutine = null; }
         CancelInvoke();
     }
 
@@ -143,29 +129,22 @@ public class Level3Manager : MonoBehaviour
 
     void LoadNextQuestion()
     {
-        if (words == null || words.Length == 0)
-            return;
+        if (words == null || words.Length == 0) return;
 
-        questionAnswered = false;
+        questionAnswered  = false;
         WaitingForCollect = false;
 
         if (usedIndices.Count >= words.Length)
             usedIndices.Clear();
 
         int idx;
-        do
-        {
-            idx = Random.Range(0, words.Length);
-        } while (usedIndices.Contains(idx));
+        do { idx = Random.Range(0, words.Length); }
+        while (usedIndices.Contains(idx));
 
         usedIndices.Add(idx);
         CurrentQuestion = words[idx];
 
-        if (soundCoroutine != null)
-        {
-            StopCoroutine(soundCoroutine);
-            soundCoroutine = null;
-        }
+        if (soundCoroutine != null) { StopCoroutine(soundCoroutine); soundCoroutine = null; }
         soundCoroutine = StartCoroutine(PlayQuestionSoundRepeat(initialDelay));
     }
 
@@ -182,15 +161,14 @@ public class Level3Manager : MonoBehaviour
             yield return new WaitForSeconds(clipLen + repeatInterval);
         }
 
-        soundCoroutine = null;
+        soundCoroutine    = null;
         WaitingForCollect = true;
-        Level3CollectibleSpawner.Instance?.TriggerSpawn();
+Level3CollectibleSpawner.Instance?.TriggerSpawn();
     }
 
     void ReplayQuestionSound()
     {
-        if (soundCoroutine != null)
-            return;
+        if (soundCoroutine != null) return;
         soundCoroutine = StartCoroutine(ReplaySoundOnly());
     }
 
@@ -209,16 +187,15 @@ public class Level3Manager : MonoBehaviour
             yield return new WaitForSeconds(clipLen + repeatInterval);
         }
 
-        soundCoroutine = null;
+        soundCoroutine    = null;
         WaitingForCollect = true;
-        Level3CollectibleSpawner.Instance?.TriggerSpawn();
+Level3CollectibleSpawner.Instance?.TriggerSpawn();
     }
 
     void ShowFeedback(string message, bool correct)
     {
-        if (feedbackText == null)
-            return;
-        feedbackText.text = message;
+        if (feedbackText == null) return;
+        feedbackText.text  = message;
         feedbackText.color = correct ? Color.green : Color.red;
         feedbackText.gameObject.SetActive(true);
         Invoke(nameof(HideFeedback), feedbackDuration);
@@ -226,8 +203,7 @@ public class Level3Manager : MonoBehaviour
 
     void HideFeedback()
     {
-        if (feedbackText != null)
-            feedbackText.gameObject.SetActive(false);
+        if (feedbackText != null) feedbackText.gameObject.SetActive(false);
     }
 }
 
@@ -237,7 +213,6 @@ public class WordEntry
 {
     [Tooltip("Your word collectible prefab")]
     public GameObject prefab;
-
     [Tooltip("The spoken audio clip for this word")]
-    public AudioClip sound;
+    public AudioClip  sound;
 }

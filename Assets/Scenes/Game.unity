@@ -617,7 +617,7 @@ Transform:
   m_GameObject: {fileID: 167645170}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 27.18, y: 1.469, z: 0}
+  m_LocalPosition: {x: -22.81, y: 1.469, z: 0}
   m_LocalScale: {x: 0.3596296, y: 0.5142819, z: 0.9415045}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -635,6 +635,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 54908a78db99aef44b1767ef211b0a0e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::WorldScroller
+  tileWidth: 0
 --- !u!1 &177507663
 GameObject:
   m_ObjectHideFlags: 0
@@ -3097,6 +3098,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 54908a78db99aef44b1767ef211b0a0e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::WorldScroller
+  tileWidth: 0
 --- !u!1 &982749168
 GameObject:
   m_ObjectHideFlags: 0
@@ -4146,12 +4148,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: '::'
   spawnAheadX: 12
-  laneXSpacing: 8
-  randomXExtra: 2
+  laneXSpacing: 18
+  randomXExtra: 141
   minSpawnY: -2
   maxSpawnY: 3
   minYSeparation: 1.5
-  speedScale: 0.6
+  speedScale: 0.467
   fastCatchupSpeed: 40
 --- !u!4 &1258366337
 Transform:
@@ -5845,7 +5847,7 @@ Transform:
   m_GameObject: {fileID: 1711788330}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -4.3, y: -2.81, z: 0}
+  m_LocalPosition: {x: 4.9, y: -2.81, z: 0}
   m_LocalScale: {x: 0.53341615, y: 0.650044, z: 0.3719}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -6760,13 +6762,13 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2003414500}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.6497554, y: -0.24822804, z: -0.27895856, w: 0.6621049}
-  m_LocalPosition: {x: -0.81, y: -0.68, z: -3.19}
+  m_LocalRotation: {x: 0.6459327, y: 0.31762958, z: 0.28769958, w: 0.6317527}
+  m_LocalPosition: {x: 0.72, y: -0.66, z: -3.29}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 1711788335}
-  m_LocalEulerAnglesHint: {x: 46.213, y: -87.316, z: -90}
+  m_LocalEulerAnglesHint: {x: 140.7, y: -87.31601, z: -90}
 --- !u!199 &2003414502
 ParticleSystemRenderer:
   serializedVersion: 7

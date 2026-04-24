@@ -11,8 +11,10 @@ public class Level2CollectibleSpawner : MonoBehaviour
     public static Level2CollectibleSpawner Instance { get; private set; }
 
     [Header("Spawn Position")]
-    [Tooltip("How far ahead of the player the FIRST collectible spawns")]
-    public float spawnAheadX = 10f;
+    [Tooltip(
+        "Distance to the LEFT of player where first collectible spawns. Must be > half screen width to appear off-screen left."
+    )]
+    public float spawnAheadX = 18f; // must exceed half screen width to spawn off left edge
 
     [Tooltip("X gap between each collectible lane — increase to spread them out more")]
     public float laneXSpacing = 8f;
@@ -97,13 +99,13 @@ public class Level2CollectibleSpawner : MonoBehaviour
             (spawnList[i], spawnList[j]) = (spawnList[j], spawnList[i]);
         }
 
-        float baseX = playerTransform.position.x + spawnAheadX;
+        float baseX = playerTransform.position.x - spawnAheadX;
         var usedY = new List<float>();
 
         for (int i = 0; i < spawnList.Count; i++)
         {
             var entry = spawnList[i];
-            float laneX = baseX + i * (laneXSpacing + Random.Range(0f, randomXExtra));
+            float laneX = baseX - i * (laneXSpacing + Random.Range(0f, randomXExtra));
             float spawnY = GetSeparatedY(usedY);
             usedY.Add(spawnY);
 

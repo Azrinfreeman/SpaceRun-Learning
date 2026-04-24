@@ -64,7 +64,7 @@ public class CollectibleItem : MonoBehaviour
             ? GameManager.Instance.CurrentSpeed * speedScale
             : fastCatchupSpeed;
 
-        transform.Translate(Vector3.left * speed * Time.deltaTime);
+        transform.Translate(Vector3.right * speed * Time.deltaTime);
 
         // Bob only while visible so startPosition stays in sync
         if (bobEnabled && IsVisible())
@@ -73,7 +73,7 @@ public class CollectibleItem : MonoBehaviour
             transform.position = new Vector3(transform.position.x, newY, transform.position.z);
         }
 
-        if (transform.position.x < -60f)
+        if (transform.position.x > 60f)
             Destroy(gameObject);
     }
 

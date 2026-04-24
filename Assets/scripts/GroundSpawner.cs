@@ -2,10 +2,9 @@ using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
-/// Infinite ground spawner with object pooling.
-/// OnTileRecycled fires ONLY when a tile is recycled to the front
-/// (never during initial pool build) so collectibles never spawn
-/// behind or at the player's starting position.
+/// Infinite ground spawner — tiles scroll RIGHT (world moves right to left visually).
+/// Player is on the RIGHT side of screen facing left.
+/// Tiles recycle from right side to left side (leftmost tile moves to new leftmost position).
 /// </summary>
 public class GroundSpawner : MonoBehaviour
 {
@@ -13,7 +12,7 @@ public class GroundSpawner : MonoBehaviour
     public GameObject groundTilePrefab;
     public float tileWidth = 10f;
 
-    [Tooltip("Total tiles in the pool. Must cover screen width + buffer.")]
+    [Tooltip("Total tiles in the pool.")]
     public int poolSize = 8;
 
     [Header("Obstacles")]
@@ -26,20 +25,14 @@ public class GroundSpawner : MonoBehaviour
     public float minObstacleY = -1.5f;
     public float maxObstacleY = 1f;
 
-    /// <summary>
-    /// Fired ONLY when a tile is recycled ahead of the player during gameplay.
-    /// Never fires during BuildPool or ResetSpawner.
-    /// </summary>
     public static event System.Action<float> OnTileRecycled;
 
-    // ── private ────────────────────────────────────────────────────
     private List<GameObject> pool = new List<GameObject>();
     private Transform playerTransform;
     private int tilesPlaced = 0;
     private int nextObstacleTile = 4;
-    private bool isBuilding = false; // suppresses event during setup
+    private bool isBuilding = false;
 
-    // ── Unity lifecycle ────────────────────────────────────────────
     void Start()
     {
         playerTransform = GameObject.FindGameObjectWithTag("Player").transform;
@@ -52,37 +45,36 @@ public class GroundSpawner : MonoBehaviour
             return;
 
         float speed = GameManager.Instance.CurrentSpeed;
+
+        // Tiles scroll RIGHT
         foreach (var tile in pool)
-            tile.transform.Translate(Vector3.left * speed * Time.deltaTime);
+            tile.transform.Translate(Vector3.right * speed * Time.deltaTime);
 
         RecycleTiles();
     }
 
-    // ── Setup ──────────────────────────────────────────────────────
-
     void BuildPool()
     {
-        isBuilding = true; // block OnTileRecycled during initial fill
+        isBuilding = true;
 
-        float startX = playerTransform.position.x - tileWidth;
+        // Start tiles to the LEFT of player spreading leftward
+        float startX = playerTransform.position.x + tileWidth;
         for (int i = 0; i < poolSize; i++)
         {
-            float x = startX + i * tileWidth;
+            float x = startX - i * tileWidth;
             pool.Add(
                 Instantiate(groundTilePrefab, new Vector3(x, groundY, 0f), Quaternion.identity)
             );
         }
 
-        // tilesPlaced stays 0 — recycled tile count starts from gameplay
         nextObstacleTile = 4;
         isBuilding = false;
     }
 
-    // ── Recycling ──────────────────────────────────────────────────
-
     void RecycleTiles()
     {
-        float recycleThreshold = playerTransform.position.x - tileWidth * 2f;
+        // Recycle tiles that scroll past the RIGHT edge of the player
+        float recycleThreshold = playerTransform.position.x + tileWidth * 2f;
 
         for (int i = 0; i < pool.Count; i++)
         {
@@ -90,20 +82,18 @@ public class GroundSpawner : MonoBehaviour
             if (tile == null)
                 continue;
 
-            if (tile.transform.position.x + tileWidth < recycleThreshold)
+            if (tile.transform.position.x - tileWidth > recycleThreshold)
             {
-                float newX = GetRightmostX() + tileWidth;
+                // Move to the new leftmost position
+                float newX = GetLeftmostX() - tileWidth;
                 tile.transform.position = new Vector3(newX, groundY, 0f);
 
-                // Obstacle check
                 if (tilesPlaced >= nextObstacleTile)
                 {
                     SpawnObstacle(newX);
                     nextObstacleTile = tilesPlaced + Random.Range(minTileGap, maxTileGap + 1);
                 }
 
-                // Fire event — CollectibleSpawner only hears tiles
-                // that are being placed ahead during live gameplay
                 if (!isBuilding)
                     OnTileRecycled?.Invoke(newX);
 
@@ -112,16 +102,14 @@ public class GroundSpawner : MonoBehaviour
         }
     }
 
-    float GetRightmostX()
+    float GetLeftmostX()
     {
-        float maxX = float.MinValue;
+        float minX = float.MaxValue;
         foreach (var tile in pool)
-            if (tile != null && tile.transform.position.x > maxX)
-                maxX = tile.transform.position.x;
-        return maxX;
+            if (tile != null && tile.transform.position.x < minX)
+                minX = tile.transform.position.x;
+        return minX;
     }
-
-    // ── Obstacles ──────────────────────────────────────────────────
 
     void SpawnObstacle(float tileX)
     {
@@ -134,11 +122,9 @@ public class GroundSpawner : MonoBehaviour
         Instantiate(obstaclePrefabs[idx], new Vector3(spawnX, spawnY, 0f), Quaternion.identity);
     }
 
-    // ── Reset ──────────────────────────────────────────────────────
-
     public void ResetSpawner()
     {
-        isBuilding = true; // suppress events during reset too
+        isBuilding = true;
 
         foreach (var obs in GameObject.FindGameObjectsWithTag("Obstacle"))
             Destroy(obs);
@@ -146,10 +132,10 @@ public class GroundSpawner : MonoBehaviour
         tilesPlaced = 0;
         nextObstacleTile = 4;
 
-        float startX = playerTransform.position.x - tileWidth;
+        float startX = playerTransform.position.x + tileWidth;
         for (int i = 0; i < pool.Count; i++)
             if (pool[i] != null)
-                pool[i].transform.position = new Vector3(startX + i * tileWidth, groundY, 0f);
+                pool[i].transform.position = new Vector3(startX - i * tileWidth, groundY, 0f);
 
         isBuilding = false;
     }

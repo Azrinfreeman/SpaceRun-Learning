@@ -66,7 +66,8 @@ public class CollectibleSpawner : MonoBehaviour
             return;
 
         int count = Random.Range(minClusterSize, maxClusterSize + 1);
-        float currentX = tileX + tileWidth * 0.5f + xOffset;
+        // tileX is the leftmost tile (off left edge). Centre of tile = tileX + tileWidth*0.5
+        float currentX = tileX + tileWidth * 0.5f;
 
         // Track used Y values so items don't overlap vertically
         float[] usedY = new float[count];
@@ -75,7 +76,7 @@ public class CollectibleSpawner : MonoBehaviour
         {
             // Each item gets its own random X with spacing
             if (i > 0)
-                currentX += minXSpacing + Random.Range(0f, randomXExtra);
+                currentX -= minXSpacing + Random.Range(0f, randomXExtra);
 
             // Pick a Y that is far enough from previous items in this cluster
             float spawnY = GetSeparatedY(usedY, i);

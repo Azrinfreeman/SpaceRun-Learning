@@ -18,6 +18,11 @@ public class PlayerController : MonoBehaviour
     void Start()
     {
         rb = GetComponent<Rigidbody2D>();
+
+        // Player is on right side of screen facing left
+        var sr = GetComponent<SpriteRenderer>();
+        if (sr != null)
+            sr.flipX = true;
     }
 
     void Update()
@@ -32,8 +37,8 @@ public class PlayerController : MonoBehaviour
 
         if (animator != null)
         {
-            //          animator.SetBool("isGrounded", isGrounded);
-            //            animator.SetFloat("velocityY", rb.linearVelocity.y);
+            animator.SetBool("isGrounded", isGrounded);
+            animator.SetFloat("velocityY", rb.linearVelocity.y);
         }
     }
 
@@ -41,7 +46,7 @@ public class PlayerController : MonoBehaviour
     {
         rb.linearVelocity = new Vector2(rb.linearVelocity.x, jumpForce);
         if (animator != null)
-            animator.SetTrigger("jumpTrigger");
+            animator.SetTrigger("jump");
     }
 
     public void Die()
@@ -50,9 +55,9 @@ public class PlayerController : MonoBehaviour
             return; // prevent double-call
         isDead = true;
         rb.linearVelocity = Vector2.zero;
-        rb.gravityScale = 1f;
+        rb.gravityScale = 0f;
         if (animator != null)
-            animator.Play("Static");
+            animator.SetTrigger("die");
         GameManager.Instance.GameOver();
     }
 

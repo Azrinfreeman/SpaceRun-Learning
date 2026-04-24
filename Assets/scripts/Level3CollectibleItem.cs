@@ -47,10 +47,12 @@ public class Level3CollectibleItem : MonoBehaviour
             ? GameManager.Instance.CurrentSpeed * speedScale
             : fastCatchupSpeed;
 
-        transform.Translate(Vector3.left * speed * Time.deltaTime);
+        transform.Translate(Vector3.right * speed * Time.deltaTime);
 
-        if (transform.position.x < -60f)
+        if (transform.position.x > 60f)
+        {
             Destroy(gameObject);
+        }
     }
 
     void OnTriggerEnter2D(Collider2D other)
