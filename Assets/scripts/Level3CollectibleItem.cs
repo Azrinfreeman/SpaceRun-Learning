@@ -51,6 +51,8 @@ public class Level3CollectibleItem : MonoBehaviour
 
         if (transform.position.x > 60f)
         {
+            // Notify manager this collectible was missed (scrolled off screen)
+            Level3Manager.Instance?.OnCollectibleMissed(gameObject);
             Destroy(gameObject);
         }
     }

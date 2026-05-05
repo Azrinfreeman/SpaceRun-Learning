@@ -1,4 +1,9 @@
+using System.Collections.Generic;
 using UnityEngine;
+#if UNITY_EDITOR
+using UnityEditor;
+using System.Linq;
+#endif
 
 /// <summary>
 /// Spawns collectibles by listening to GroundSpawner.OnTileRecycled.
@@ -9,6 +14,14 @@ public class CollectibleSpawner : MonoBehaviour
 {
     [Header("Collectible Prefabs")]
     public GameObject[] collectiblePrefabs;
+
+#if UNITY_EDITOR
+    [Header("Editor Auto Assign")]
+    [Tooltip(
+        "Folder where collectible prefabs are stored. Example: Assets/Prefabs/Collectible/Level1"
+    )]
+    public string collectiblePrefabFolder = "Assets/Prefabs/Collectible/Level1";
+#endif
 
     [Header("Spawn Gap (in tiles)")]
     public int minTileGap = 2;
@@ -38,9 +51,16 @@ public class CollectibleSpawner : MonoBehaviour
     private int nextSpawnTile = 3;
 
     // ── Unity lifecycle ────────────────────────────────────────────
-    void OnEnable() => GroundSpawner.OnTileRecycled += OnTileRecycled;
 
-    void OnDisable() => GroundSpawner.OnTileRecycled -= OnTileRecycled;
+    void OnEnable()
+    {
+        GroundSpawner.OnTileRecycled += OnTileRecycled;
+    }
+
+    void OnDisable()
+    {
+        GroundSpawner.OnTileRecycled -= OnTileRecycled;
+    }
 
     // ── Tile event ─────────────────────────────────────────────────
 
@@ -66,23 +86,27 @@ public class CollectibleSpawner : MonoBehaviour
             return;
 
         int count = Random.Range(minClusterSize, maxClusterSize + 1);
-        // tileX is the leftmost tile (off left edge). Centre of tile = tileX + tileWidth*0.5
-        float currentX = tileX + tileWidth * 0.5f;
 
-        // Track used Y values so items don't overlap vertically
+        // tileX is the leftmost tile. Centre of tile = tileX + tileWidth * 0.5f
+        float currentX = tileX + tileWidth * 0.5f + xOffset;
+
+        // Track used Y values so items do not overlap vertically
         float[] usedY = new float[count];
 
         for (int i = 0; i < count; i++)
         {
             // Each item gets its own random X with spacing
             if (i > 0)
+            {
                 currentX -= minXSpacing + Random.Range(0f, randomXExtra);
+            }
 
             // Pick a Y that is far enough from previous items in this cluster
             float spawnY = GetSeparatedY(usedY, i);
             usedY[i] = spawnY;
 
             int idx = Random.Range(0, collectiblePrefabs.Length);
+
             Instantiate(
                 collectiblePrefabs[idx],
                 new Vector3(currentX, spawnY, 0f),
@@ -102,10 +126,14 @@ public class CollectibleSpawner : MonoBehaviour
             float minDist = float.MaxValue;
 
             for (int i = 0; i < count; i++)
+            {
                 minDist = Mathf.Min(minDist, Mathf.Abs(candidate - usedY[i]));
+            }
 
             if (count == 0 || minDist >= minYSeparation)
+            {
                 return candidate;
+            }
 
             if (minDist > bestScore)
             {
@@ -122,9 +150,61 @@ public class CollectibleSpawner : MonoBehaviour
     public void ResetSpawner()
     {
         foreach (var c in GameObject.FindGameObjectsWithTag("Collectible"))
+        {
             Destroy(c);
+        }
 
         tilesReceived = 0;
         nextSpawnTile = 3;
     }
+
+#if UNITY_EDITOR
+
+    [ContextMenu("Auto Assign Collectible Prefabs")]
+    private void AutoAssignCollectiblePrefabs()
+    {
+        if (string.IsNullOrWhiteSpace(collectiblePrefabFolder))
+        {
+            Debug.LogError("[CollectibleSpawner] Collectible prefab folder path is empty.");
+            return;
+        }
+
+        string fixedFolderPath = collectiblePrefabFolder.Replace("\\", "/");
+
+        if (!AssetDatabase.IsValidFolder(fixedFolderPath))
+        {
+            Debug.LogError($"[CollectibleSpawner] Folder does not exist: {fixedFolderPath}");
+            return;
+        }
+
+        string[] prefabGuids = AssetDatabase.FindAssets("t:Prefab", new[] { fixedFolderPath });
+
+        List<GameObject> prefabs = prefabGuids
+            .Select(guid => AssetDatabase.GUIDToAssetPath(guid))
+            .OrderBy(path => System.IO.Path.GetFileNameWithoutExtension(path))
+            .Select(path => AssetDatabase.LoadAssetAtPath<GameObject>(path))
+            .Where(prefab => prefab != null)
+            .ToList();
+
+        if (prefabs.Count == 0)
+        {
+            Debug.LogWarning($"[CollectibleSpawner] No prefabs found inside: {fixedFolderPath}");
+            return;
+        }
+
+        collectiblePrefabs = prefabs.ToArray();
+
+        EditorUtility.SetDirty(this);
+
+        Debug.Log(
+            $"[CollectibleSpawner] Auto assigned {collectiblePrefabs.Length} collectible prefabs from: {fixedFolderPath}"
+        );
+
+        for (int i = 0; i < collectiblePrefabs.Length; i++)
+        {
+            Debug.Log($"[CollectibleSpawner] Element {i}: {collectiblePrefabs[i].name}");
+        }
+    }
+
+#endif
 }
