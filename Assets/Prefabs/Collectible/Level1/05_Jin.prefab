@@ -103,7 +103,7 @@ GameObject:
   - component: {fileID: 1447596291274168253}
   - component: {fileID: 6286363943270803645}
   - component: {fileID: 4344348200877493780}
-  - component: {fileID: 3504243870926523322}
+  - component: {fileID: 2115497612397386395}
   m_Layer: 0
   m_Name: 05_Jin
   m_TagString: Collectible
@@ -237,7 +237,7 @@ MonoBehaviour:
   SFX: {fileID: 8300000, guid: 4ebd0d878c8e804428a3b7b87ead9079, type: 3}
   SFXVolume: 1
   pitchVariation: 0.1616
---- !u!114 &3504243870926523322
+--- !u!114 &2115497612397386395
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -246,9 +246,15 @@ MonoBehaviour:
   m_GameObject: {fileID: 5710220525801358475}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: b585b05756f75d94797ad8052e2a1578, type: 3}
+  m_Script: {fileID: 11500000, guid: 49b3cd3cb02c3d343acb08cbd4955615, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Level2CollectibleItem
-  collectEffectPrefab: {fileID: 310487042481646247, guid: c3edddf67d718c74dacec0744eb11f37, type: 3}
-  collectibleSound: {fileID: 8300000, guid: 4ebd0d878c8e804428a3b7b87ead9079, type: 3}
+  m_EditorClassIdentifier: Assembly-CSharp::CollectibleItem
+  scoreValue: 10
+  speedScale: 0.345
+  fastCatchupSpeed: 40
+  collectEffectPrefab: {fileID: 0}
+  bobEnabled: 1
+  bobHeight: 0.3
+  bobSpeed: 3
+  collectibleSound: {fileID: 8300000, guid: f468120b35ad2ae4cbbfbd5e4cf61ba1, type: 3}
   soundDelay: 0.5

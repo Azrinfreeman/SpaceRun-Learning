@@ -47,6 +47,7 @@ public class CollectibleItem : MonoBehaviour
     private Camera mainCam;
     private Renderer rend;
     private Vector3 startPosition;
+    private bool isCollected = false;
 
     void Start()
     {
@@ -57,6 +58,9 @@ public class CollectibleItem : MonoBehaviour
 
     void Update()
     {
+        if (isCollected)
+            return;
+
         if (GameManager.Instance == null || GameManager.Instance.IsGameOver)
             return;
 
@@ -79,8 +83,21 @@ public class CollectibleItem : MonoBehaviour
 
     void OnTriggerEnter2D(Collider2D other)
     {
+        if (isCollected)
+            return;
+
         if (!other.CompareTag("Player"))
             return;
+
+        isCollected = true;
+
+        // ── KEY FIX ───────────────────────────────────────────────
+        // Destroy() is deferred to end-of-frame, so the collider stays
+        // active for the rest of this physics step. Disable ALL colliders
+        // immediately so this object cannot trigger anything else.
+        foreach (var col in GetComponentsInChildren<Collider2D>())
+            col.enabled = false;
+        // ─────────────────────────────────────────────────────────
 
         // Score and progress
         GameManager.Instance.AddScore(scoreValue);
@@ -92,7 +109,7 @@ public class CollectibleItem : MonoBehaviour
         if (sfx != null)
         {
             sfx.PlaySFX();
-            sfxLength = sfx.GetClipLength(); // see note below
+            sfxLength = sfx.GetClipLength();
         }
 
         // 2. Play this collectible's specific sound after SFX finishes
@@ -106,6 +123,20 @@ public class CollectibleItem : MonoBehaviour
             Instantiate(collectEffectPrefab, transform.position, Quaternion.identity);
 
         Destroy(gameObject);
+    }
+
+    // ── Debug helper — remove once bug is confirmed fixed ──────────
+    // If any balloon disappears WITHOUT being collected, the Console will
+    // print exactly which line of code destroyed it.
+    void OnDestroy()
+    {
+        if (!isCollected)
+        {
+            Debug.LogWarning(
+                $"[CollectibleItem] '{name}' was destroyed WITHOUT being collected!"
+            );
+            Debug.LogWarning(System.Environment.StackTrace);
+        }
     }
 
     bool IsVisible()

@@ -51,10 +51,7 @@ public class GameManager : MonoBehaviour
         groundSpawner = FindFirstObjectByType<GroundSpawner>();
         collectibleSpawner = FindFirstObjectByType<CollectibleSpawner>();
 
-        // Read level chosen from main menu — overrides Inspector value
         currentLevel = MainMenuManager.SelectedLevel;
-
-        //StartGame();
     }
 
     void Update()
@@ -86,7 +83,6 @@ public class GameManager : MonoBehaviour
         uiManager?.UpdateScore(0f);
         uiManager?.UpdateHighScore(highScore);
 
-        // Start correct level logic
         if (currentLevel == 2)
         {
             Level2Manager.Instance?.StartLevel2();
@@ -103,7 +99,6 @@ public class GameManager : MonoBehaviour
             Level3Manager.Instance?.StopLevel3();
         }
 
-        // Level 1 collectibles only spawn in Level 1
         if (collectibleSpawner != null)
             collectibleSpawner.gameObject.SetActive(currentLevel == 1);
     }
@@ -154,20 +149,17 @@ public class GameManager : MonoBehaviour
                 anim.Play("CharacterRun");
         }
 
-        // Re-read level in case it changed
         currentLevel = MainMenuManager.SelectedLevel;
 
         playerHealth?.ResetHealth();
         groundSpawner?.ResetSpawner();
         collectibleSpawner?.ResetSpawner();
 
-        // Destroy any leftover Level 2 / 3 collectibles
         foreach (var item in FindObjectsByType<Level2CollectibleItem>(FindObjectsSortMode.None))
             Destroy(item.gameObject);
         foreach (var item in FindObjectsByType<Level3CollectibleItem>(FindObjectsSortMode.None))
             Destroy(item.gameObject);
 
-        // Fully reset Level 2 / 3 spawner state so they start fresh
         Level2CollectibleSpawner.Instance?.ResetSpawn();
         Level3CollectibleSpawner.Instance?.ResetSpawn();
         Level2Manager.Instance?.StopLevel2();
@@ -179,8 +171,10 @@ public class GameManager : MonoBehaviour
             uiManager.gameOverPanel.SetActive(false);
         }
 
-        if (ProgressSlider.instance != null)
-            ProgressSlider.instance.GetComponent<Slider>().value = 0f;
+        // FIX: Use ResetSlider() instead of manually zeroing the value.
+        // ResetSlider() also stops any in-progress coroutine and resets
+        // isFull, so GameComplete() won't fire again immediately on restart.
+        ProgressSlider.instance?.ResetSlider();
 
         StartGame();
     }

@@ -18,24 +18,21 @@ public class ProgressSlider : MonoBehaviour
 
     public TextMeshProUGUI textValue;
 
-    // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
         isFull = false;
     }
 
-    // Update is called once per frame
     void Update()
     {
         textValue.text = GetComponent<Slider>().value.ToString("F0") + "%";
 
-        if (isFull)
-        {
-            uiManager.ShowGameCompleted(
-                GameManager.Instance.Score,
-                PlayerPrefs.GetFloat("HighScore", 0f)
-            );
-        }
+        // NOTE: Do NOT call ShowGameCompleted or GameComplete here.
+        // isFull is set inside AnimateSlider once the coroutine finishes,
+        // and GameComplete is called there exactly once. Calling anything
+        // from Update() means it fires every frame after the slider fills,
+        // which caused all remaining collectibles to be wiped on the next
+        // RestartGame() because IsGameOver was set prematurely.
     }
 
     public void addProgress(int progress)
@@ -47,8 +44,8 @@ public class ProgressSlider : MonoBehaviour
     {
         Slider slider = GetComponent<Slider>();
         float startValue = slider.value;
-        float targetValue = slider.value + progress;
-        float duration = 0.5f; // seconds
+        float targetValue = Mathf.Min(slider.value + progress, slider.maxValue);
+        float duration = 0.5f;
         float elapsed = 0f;
 
         while (elapsed < duration)
@@ -59,9 +56,20 @@ public class ProgressSlider : MonoBehaviour
         }
 
         slider.value = targetValue;
-        if (slider.value == 100f)
+
+        // Only trigger game complete ONCE, right here, when the animation finishes.
+        if (!isFull && slider.value >= slider.maxValue)
         {
             isFull = true;
-        } // ensure it lands exactly on target
+            GameManager.Instance?.GameComplete();
+        }
+    }
+
+    // Called by GameManager.RestartGame() to reset state for a new round.
+    public void ResetSlider()
+    {
+        StopAllCoroutines();
+        isFull = false;
+        GetComponent<Slider>().value = 0f;
     }
 }
